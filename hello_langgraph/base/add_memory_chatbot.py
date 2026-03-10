@@ -72,8 +72,8 @@ graph_builder.add_node("chatbot", chatbot)
 
 # 创建工具节点，使用 LangGraph 预置的 ToolNode
 # ToolNode 会执行 LLM 请求的工具调用，并返回工具的执行结果
-# 参数 tools=[tools] 指定要执行的工具列表
-tool_node = ToolNode(tools=[tools])
+# 参数 tools=tools 指定要执行的工具列表
+tool_node = ToolNode(tools=tools)
 # 将工具节点添加到图中，节点名为 "tools"
 graph_builder.add_node("tools", tool_node)
 
