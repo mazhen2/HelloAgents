@@ -51,7 +51,7 @@ def run_add_tools_chatbot():
     run_chatbot("hello_langgraph.base.add_tools_chatbot", test_questions)
 
 def run_add_memory_chatbot():
-    """测试带工具的聊天机器人"""
+    """添加记忆"""
     test_questions = [
         "现在几点了？",
         "北京天气怎么样？",
@@ -60,7 +60,17 @@ def run_add_memory_chatbot():
     run_chatbot("hello_langgraph.base.add_memory_chatbot", test_questions)
 
 
+def run_add_human_in_the_loop_chatbot():
+    """添加人工在环控制"""
+    test_questions = [
+        "北京天气怎么样？",
+        "我问你的第一个问题是什么？"
+    ]
+    run_chatbot("hello_langgraph.base.add_human-in-the-loop_chatbot", test_questions)
+
+
 if __name__ == '__main__':
     # run_base_chatbot()
     # run_add_tools_chatbot()
-    run_add_memory_chatbot()
+    # run_add_memory_chatbot()
+    run_add_human_in_the_loop_chatbot()
