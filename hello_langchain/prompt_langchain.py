@@ -179,6 +179,9 @@ def create_few_shot_prompt_with_selector():
         from langchain_community.embeddings import HuggingFaceEmbeddings
         from langchain_community.vectorstores import Chroma
 
+        # 初始化嵌入模型
+        embeddings = HuggingFaceEmbeddings()
+
         # 使用语义相似度选择器：按输入选取最相似的 k 个示例
         # from_examples 方法会：
         # 1. 使用 HuggingFaceEmbeddings 将所有示例转换为向量
@@ -186,10 +189,59 @@ def create_few_shot_prompt_with_selector():
         # 3. 当有新输入时，计算输入向量并找出最相似的 k 个示例
         example_selector = SemanticSimilarityExampleSelector.from_examples(
             examples=examples,  # 示例列表
-            embeddings=HuggingFaceEmbeddings(),  # 嵌入模型，用于将文本转换为向量
+            embeddings=embeddings,  # 嵌入模型，用于将文本转换为向量
             vectorstore_cls=Chroma,  # 向量存储类，用于存储和检索向量
             k=2,  # 每次选择最相似的 2 个示例
         )
+
+        # ====== 打印相似度分析 ======
+        user_input = "你喜欢吃什么水果？"
+
+        # 获取向量存储，直接用向量计算相似度
+        vectorstore = example_selector.vectorstore
+
+        # 计算用户输入的嵌入向量
+        user_embedding = embeddings.embed_query(user_input)
+
+        # 获取所有示例的嵌入向量并计算相似度
+        print("\n" + "=" * 60)
+        print("【相似度分析】用户输入:", user_input)
+        print("=" * 60)
+        print(f"{'排名':<4} {'相似度':<10} {'问题':<45}")
+        print("-" * 70)
+
+        # 遍历所有示例，计算与用户输入的相似度
+        similarities = []
+        for i, ex in enumerate(examples):
+            # 将示例的问题转换为向量
+            ex_embedding = embeddings.embed_query(ex["question"])
+            # 计算余弦相似度
+            import numpy as np
+
+            user_vec = np.array(user_embedding)
+            ex_vec = np.array(ex_embedding)
+            cosine_sim = np.dot(user_vec, ex_vec) / (
+                np.linalg.norm(user_vec) * np.linalg.norm(ex_vec)
+            )
+            similarities.append((i, ex["question"], cosine_sim))
+
+        # 按相似度降序排列
+        similarities.sort(key=lambda x: x[2], reverse=True)
+
+        for rank, (idx, question, score) in enumerate(similarities, 1):
+            similarity_pct = score * 100
+            print(f"{rank:<4} {similarity_pct:>6.2f}%    {question:<45}")
+
+        print("=" * 70)
+
+        # 直接获取选择器选中的示例
+        selected_examples = example_selector.select_examples({"input": user_input})
+        print(f"【选中示例】k=2，选取的示例:")
+        for i, ex in enumerate(selected_examples, 1):
+            print(f"  {i}. Q: {ex['question']}")
+            print(f"     A: {ex['answer']}")
+        print()
+        # ====== 打印相似度分析结束 ======
 
         # 创建小样本提示词模板
         prompt = FewShotPromptTemplate(
@@ -200,8 +252,9 @@ def create_few_shot_prompt_with_selector():
         )
 
         # 格式化提示词，自动选择与输入最相关的 2 个示例
-        result = prompt.format(input="你喜欢吃什么水果？")
-        print("Few-Shot 提示词（示例选择器）:\n", result)
+        result = prompt.format(input=user_input)
+        print("【生成的 Few-Shot 提示词】:\n")
+        print(result)
         return result
 
     except ImportError as e:
